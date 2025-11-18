@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { CacheModule } from '@nestjs/cache-manager'; //'@nestjs/cache-manager';
+//import { CacheModule } from '@nestjs/cache-manager'; //'@nestjs/cache-manager';
 import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -28,11 +28,6 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
         uri: configService.get<string>('MONGODB_URI'),
       }),
       inject: [ConfigService],
-    }),
-    CacheModule.register({
-      isGlobal: true,
-      ttl: 3600, // 1 hour
-      max: 1000,
     }),
     ThrottlerModule.forRoot([
       {

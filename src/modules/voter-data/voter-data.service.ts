@@ -1,6 +1,6 @@
 // src/modules/voter-data/voter-data.service.ts
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import type { Cache } from 'cache-manager';
+//import { CACHE_MANAGER } from '@nestjs/cache-manager';
+//import type { Cache } from 'cache-manager';
 import { Injectable, Inject, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -18,7 +18,7 @@ export class VoterDataService {
 
   constructor(
     @InjectModel(VoterData.name) private voterDataModel: Model<VoterData>,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    //@Inject(CACHE_MANAGER) private cacheManager: Cache,
     private configService: ConfigService,
   ) {
     this.apiUrl = this.configService.get('THIRD_PARTY_API_URL');
@@ -38,7 +38,7 @@ export class VoterDataService {
   async searchSingle(epicNo: string) {
     // Step 1: Check cache
     const cacheKey = `voter:${epicNo}`;
-    try {
+    /*try {
       const cachedData = await this.cacheManager.get(cacheKey);
 
       if (cachedData) {
@@ -47,7 +47,7 @@ export class VoterDataService {
       }
     } catch (error) {
       console.log(error);
-    }
+    }*/
 
     // Step 2: Check database
     let voterData = await this.voterDataModel.findOne({
@@ -58,11 +58,11 @@ export class VoterDataService {
     if (voterData) {
       console.log(`Database hit for ${epicNo}`);
       // Store in cache for next time
-      try {
+      /*try {
         await this.cacheManager.set(cacheKey, voterData.toObject(), 3600);
       } catch (error: any) {
         console.log('error', error);
-      }
+      }*/
 
       return { ...voterData.toObject(), dataSource: 'database' };
     }
@@ -111,9 +111,9 @@ export class VoterDataService {
             console.log('save data in db done');
 
             console.log('going to save data in cache');
-            try {
+            /*try {
               await this.cacheManager.set(cacheKey, voterData.toObject(), 3600);
-            } catch (error) {}
+            } catch (error) {}*/
             // Save to cache
 
             console.log('save data in cache done');
@@ -156,10 +156,10 @@ export class VoterDataService {
           dataSource: 'api',
         });
 
-        try {
+        /*try {
           // Save to cache
           await this.cacheManager.set(cacheKey, voterData.toObject(), 3600);
-        } catch (error) {}
+        } catch (error) {}*/
 
         return { ...voterData.toObject(), dataSource: 'api' };
       } else {
