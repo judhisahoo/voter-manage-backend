@@ -224,7 +224,7 @@ export class VoterDataService {
 
   async delete(epicNo: string) {
     // Clear cache
-    await this.cacheManager.del(`voter:${epicNo}`);
+    //await this.cacheManager.del(`voter:${epicNo}`);
 
     // Delete from database
     return this.voterDataModel.findOneAndDelete({ epic_no: epicNo });
