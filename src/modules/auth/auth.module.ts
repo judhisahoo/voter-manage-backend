@@ -21,7 +21,7 @@ import { RolesGuard } from './guards/roles.guard';
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
         signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '7d',
+          expiresIn: 24 * 60 * 60 * 7, //configService.get<string>('JWT_EXPIRES_IN') || '1'
         },
       }),
       inject: [ConfigService],
