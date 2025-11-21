@@ -44,4 +44,9 @@ export class VoterDataController {
   async delete(@Param('epicNo') epicNo: string) {
     return this.voterDataService.delete(epicNo);
   }
+
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    return this.voterDataService.findById(id);
+  }
 }

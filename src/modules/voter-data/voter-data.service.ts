@@ -229,4 +229,22 @@ export class VoterDataService {
     // Delete from database
     return this.voterDataModel.findOneAndDelete({ epic_no: epicNo });
   }
+
+  async findById(id: string) {
+    try {
+      const voterData = await this.voterDataModel.findById(id);
+      if (!voterData) {
+        throw new HttpException('Voter data not found', HttpStatus.NOT_FOUND);
+      }
+      if (voterData.isDisabled) {
+        throw new HttpException('Voter data is disabled', HttpStatus.FORBIDDEN);
+      }
+      return voterData.toObject();
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Error fetching data',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }
