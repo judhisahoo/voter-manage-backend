@@ -1,4 +1,10 @@
-import { IsEmail, IsString, MinLength, IsEnum, IsOptional } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  IsEnum,
+  IsOptional,
+} from 'class-validator';
 import { UserRole } from '../schemas/user.schema';
 
 export class UpdateUserDto {
@@ -10,11 +16,6 @@ export class UpdateUserDto {
   @IsEmail()
   @IsOptional()
   email?: string;
-
-  @IsString()
-  @IsOptional()
-  @MinLength(6)
-  password?: string;
 
   @IsEnum(UserRole)
   @IsOptional()
