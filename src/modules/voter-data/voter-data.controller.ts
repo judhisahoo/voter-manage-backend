@@ -49,4 +49,9 @@ export class VoterDataController {
   async findOne(@Param('id') id: string) {
     return this.voterDataService.findById(id);
   }
+
+  @Get('details/:epicNo')
+  async details(@Param('epicNo') epicNo: string) {
+    return this.voterDataService.searchSingle(epicNo);
+  }
 }
