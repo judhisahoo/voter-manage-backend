@@ -12,10 +12,10 @@ async function bootstrap() {
   app.use(compression());
   
   // CORS
-  app.enableCors({
+  /*app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
-  });
+  });*/
   
   // Global validation
   app.useGlobalPipes(
