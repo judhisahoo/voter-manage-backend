@@ -11,12 +11,15 @@ import {
   Request,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 import { VoterDataService } from './voter-data.service';
 import { SearchVoterDto } from './dto/search-voter.dto';
 
+@ApiTags('voter-data')
+@ApiBearerAuth('access-token')
 @Controller('voter-data')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class VoterDataController {
