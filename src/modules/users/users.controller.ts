@@ -11,7 +11,13 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -20,6 +26,7 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UserDto } from './dto/user.dto';
 
 @ApiTags('users')
 @ApiBearerAuth('access-token')
@@ -38,8 +45,35 @@ export class UsersController {
   @Get()
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all users (admin only)' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of users retrieved successfully',
+    type: UserDto,
+    isArray: true,
+  })
   async findAll() {
     return this.usersService.findAll();
+  }
+
+  @Get(':id')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get user details by ID (admin only)' })
+  @ApiParam({
+    name: 'id',
+    description: 'User ID',
+    example: '665f1c2b4f1a2b3c4d5e6f7a',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User details retrieved successfully',
+    type: UserDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  async findOne(@Param('id') id: string) {
+    return this.usersService.findById(id);
   }
 
   @Put('/profile')
@@ -84,4 +118,6 @@ export class UsersController {
   async delete(@Param('id') id: string) {
     return this.usersService.delete(id);
   }
+
+  
 }
