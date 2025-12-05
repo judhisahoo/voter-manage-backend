@@ -53,10 +53,14 @@ export class UsersService {
       updateData.password = await bcrypt.hash(updateData.password, 12);
     }
 
-    return this.userModel
+    this.userModel
       .findByIdAndUpdate(id, updateData, { new: true })
       .select('-password')
       .exec();
+    
+    const userData = await this.userModel.findById(id).select('-password').exec();
+
+    return { message: 'User data updated successfully', user: userData };
   }
 
   async updateStatus(id: string, status: UserStatus) {
