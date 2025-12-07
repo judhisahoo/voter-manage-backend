@@ -7,6 +7,7 @@ import { Model } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { VoterData } from '../voter-data/schemas/voter-data.schema'; //'./schemas/voter-data.schema';
+import { UploadExcelResponseDto } from './dto/upload-excel.dto';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -244,6 +245,216 @@ export class VoterDataService {
       throw new HttpException(
         error.message || 'Error fetching data',
         HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+
+  /***
+   * Handle file upload with validation and configuration
+   * This method centralizes file upload configuration and validation
+   */
+  async handleFileUpload(file: Express.Multer.File): Promise<UploadExcelResponseDto> {
+    // Validate file upload configuration
+    if (!file) {
+      throw new HttpException('No file uploaded', HttpStatus.BAD_REQUEST);
+    }
+
+    // Validate file type
+    if (!file.originalname.match(/\.(xlsx|xls)$/)) {
+      throw new HttpException('Please upload an Excel file (.xlsx or .xls)', HttpStatus.BAD_REQUEST);
+    }
+
+    // Validate file size (10MB limit)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      throw new HttpException('File size exceeds 10MB limit', HttpStatus.PAYLOAD_TOO_LARGE);
+    }
+
+    // Process the Excel file
+    return this.importFromExcel(file);
+  }
+
+  /***
+   * Import data from Excel file uploaded via multipart form data
+   * Excel headers: SL No, EPIC, Part/Serial, Name, Relative Name, House, Extra1, Extra2, Gender
+   * Schema mapping: 
+   * SL No -> not stored (auto increment)
+   * EPIC -> epic_no
+   * Part/Serial -> serial_number  
+   * Name -> name
+   * Relative Name -> relation_name
+   * House -> address_line
+   * Gender -> gender
+   */
+  async importFromExcel(file: Express.Multer.File) {
+    try {
+      // Import xlsx library
+      const XLSX = require('xlsx');
+      
+      // Parse Excel file
+      const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      
+      // Convert to JSON array
+      const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      
+      if (!data || data.length === 0) {
+        throw new HttpException('Excel file is empty', HttpStatus.BAD_REQUEST);
+      }
+
+      // Extract headers (first row)
+      const headers = data[0].map((header: string) => header?.toString().trim());
+      
+      // Define expected headers mapping
+      const headerMapping: { [key: string]: string } = {
+        'SL No': 'slNo',
+        'EPIC': 'epic_no',
+        'Part/Serial': 'serial_number',
+        'Name': 'name',
+        'Relative Name': 'relation_name',
+        'House': 'address_line',
+        'Gender': 'gender'
+      };
+
+      // Validate required headers
+      const requiredHeaders = ['EPIC', 'Name'];
+      const missingHeaders = requiredHeaders.filter(header => !headers.includes(header));
+      
+      if (missingHeaders.length > 0) {
+        throw new HttpException(
+          `Missing required headers: ${missingHeaders.join(', ')}. Required headers are: ${requiredHeaders.join(', ')}`,
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
+      // Process data rows (skip header row)
+      const rows = data.slice(1).filter((row: any[]) => row.length > 0 && row.some(cell => cell));
+      
+      if (rows.length === 0) {
+        throw new HttpException('No data rows found in Excel file', HttpStatus.BAD_REQUEST);
+      }
+
+      const importResults = {
+        totalRows: rows.length,
+        successful: 0,
+        failed: 0,
+        errors: [] as string[],
+        duplicates: [] as string[]
+      };
+
+      const bulkOperations: any[] = [];
+      
+      for (let i = 0; i < rows.length; i++) {
+        try {
+          const row = rows[i];
+          const rowIndex = i + 2; // +2 because we skip header and array is 0-indexed
+          
+          // Create object with mapped data
+          const voterRecord: any = {
+            epic_no: '',
+            name: '',
+            status: 'active',
+            gender: '',
+            serial_number: '',
+            relation_name: '',
+            address_line: '',
+            dataSource: 'excel_import',
+          };
+
+          // Map each column to the appropriate field
+          headers.forEach((header: string, colIndex: number) => {
+            const mappedField = headerMapping[header];
+            if (mappedField && row[colIndex] !== undefined && row[colIndex] !== null && row[colIndex] !== '') {
+              const value = row[colIndex].toString().trim();
+              
+              switch (mappedField) {
+                case 'epic_no':
+                  voterRecord.epic_no = value;
+                  break;
+                case 'name':
+                  voterRecord.name = value;
+                  break;
+                case 'serial_number':
+                  voterRecord.serial_number = value;
+                  break;
+                case 'relation_name':
+                  voterRecord.relation_name = value;
+                  break;
+                case 'address_line':
+                  voterRecord.address_line = value;
+                  break;
+                case 'gender':
+                  voterRecord.gender = value;
+                  break;
+              }
+            }
+          });
+
+          // Validate required fields
+          if (!voterRecord.epic_no || !voterRecord.name) {
+            importResults.errors.push(`Row ${rowIndex}: Missing required fields - EPIC and Name are mandatory`);
+            importResults.failed++;
+            continue;
+          }
+
+          // Check for duplicates
+          const existingVoter = await this.voterDataModel.findOne({ epic_no: voterRecord.epic_no });
+          if (existingVoter) {
+            importResults.duplicates.push(`EPIC ${voterRecord.epic_no} (already exists)`);
+            importResults.failed++;
+            continue;
+          }
+
+          // Add to bulk operations
+          bulkOperations.push({
+            insertOne: {
+              document: voterRecord
+            }
+          });
+
+          importResults.successful++;
+
+        } catch (rowError: any) {
+          importResults.errors.push(`Row ${i + 2}: ${rowError.message}`);
+          importResults.failed++;
+        }
+      }
+
+      // Execute bulk operations if any
+      if (bulkOperations.length > 0) {
+        const bulkResult = await this.voterDataModel.bulkWrite(bulkOperations);
+        console.log(`Bulk insert completed: ${bulkResult.insertedCount} documents inserted`);
+      }
+
+      console.log(`Import completed. Total: ${importResults.totalRows}, Success: ${importResults.successful}, Failed: ${importResults.failed}`);
+
+      return {
+        success: true,
+        message: 'Excel file processed successfully',
+        summary: {
+          totalRows: importResults.totalRows,
+          successful: importResults.successful,
+          failed: importResults.failed,
+          duplicatesCount: importResults.duplicates.length
+        },
+        details: {
+          duplicates: importResults.duplicates,
+          errors: importResults.errors
+        }
+      };
+
+    } catch (error: any) {
+      console.error('Error processing Excel file:', error);
+      
+      if (error.code === 'LIMIT_FILE_SIZE') {
+        throw new HttpException('File too large', HttpStatus.PAYLOAD_TOO_LARGE);
+      }
+      
+      throw new HttpException(
+        `Error processing Excel file: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
   }

@@ -9,14 +9,18 @@ import {
   Param,
   UseGuards,
   Request,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 import { VoterDataService } from './voter-data.service';
 import { SearchVoterDto } from './dto/search-voter.dto';
+import { UploadExcelResponseDto } from './dto/upload-excel.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('voter-data')
 @ApiBearerAuth('access-token')
@@ -57,4 +61,24 @@ export class VoterDataController {
   async details(@Param('epicNo') epicNo: string) {
     return this.voterDataService.searchSingle(epicNo);
   }
+
+  @Post('upload-excel')
+  @Roles(UserRole.ADMIN)
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadExcel(@UploadedFile() file: Express.Multer.File): Promise<UploadExcelResponseDto> {
+    return this.voterDataService.handleFileUpload(file);
+  }
+  
 }
