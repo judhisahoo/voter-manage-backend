@@ -13,7 +13,7 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ApiBearerAuth, ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiConsumes, ApiBody,ApiOperation,ApiParam,ApiResponse } from '@nestjs/swagger';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
@@ -21,6 +21,7 @@ import { VoterDataService } from './voter-data.service';
 import { SearchVoterDto } from './dto/search-voter.dto';
 import { UploadExcelResponseDto } from './dto/upload-excel.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { StatusVoterDto } from './dto/status-voter.dto';
 
 @ApiTags('voter-data')
 @ApiBearerAuth('access-token')
@@ -42,14 +43,20 @@ export class VoterDataController {
 
   @Post('disable/:epicNo')
   @Roles(UserRole.ADMIN)
-  async disable(@Param('epicNo') epicNo: string, @Request() req) {
-    return this.voterDataService.disable(epicNo, req.user.userId);
+  @ApiOperation({ summary: 'Disable voter data by EPIC number (admin only)' })
+
+  async disable(@Body() statusVoterDto: StatusVoterDto, @Request() req: any) {
+    return this.voterDataService.disable(statusVoterDto, req.user.userId);
   }
 
   @Post('enable/:epicNo')
   @Roles(UserRole.ADMIN)
-  async enable(@Param('epicNo') epicNo: string, @Request() req) {
+  @ApiOperation({ summary: 'Enable voter data by EPIC number (admin only)' })
+  /*async enable(@Param('epicNo') epicNo: string, @Request() req) {
     return this.voterDataService.enable(epicNo, req.user.userId);
+  }*/
+ async enable(@Body() statusVoterDto: StatusVoterDto, @Request() req: any) {
+    return this.voterDataService.enable(statusVoterDto,req.user.userId);
   }
 
   @Delete(':epicNo')

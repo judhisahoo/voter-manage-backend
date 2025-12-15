@@ -10,6 +10,7 @@ import { VoterData } from '../voter-data/schemas/voter-data.schema'; //'./schema
 import { UploadExcelResponseDto } from './dto/upload-excel.dto';
 import * as fs from 'fs';
 import * as path from 'path';
+import { StatusVoterDto } from './dto/status-voter.dto';
 
 @Injectable()
 export class VoterDataService {
@@ -211,9 +212,9 @@ export class VoterDataService {
     };
   }
 
-  async disable(epicNo: string, userId: string) {
+  async disable(statusVoterDto: StatusVoterDto, userId: string) {
     return this.voterDataModel.findOneAndUpdate(
-      { epic_no: epicNo },
+      { epic_no: statusVoterDto.epic_no },
       {
         isDisabled: true,
         disabledBy: userId,
@@ -223,9 +224,9 @@ export class VoterDataService {
     );
   }
 
-  async enable(epicNo: string, userId: string) {
+  async enable(statusVoterDto: StatusVoterDto, userId: string) {
     return this.voterDataModel.findOneAndUpdate(
-      { epic_no: epicNo },
+      { epic_no: statusVoterDto.epic_no },
       {
         isDisabled: false,
         disabledBy: userId,
