@@ -223,6 +223,18 @@ export class VoterDataService {
     );
   }
 
+  async enable(epicNo: string, userId: string) {
+    return this.voterDataModel.findOneAndUpdate(
+      { epic_no: epicNo },
+      {
+        isDisabled: false,
+        disabledBy: userId,
+        disabledAt: new Date(),
+      },
+      { new: true },
+    );
+  }
+
   async delete(epicNo: string) {
     // Clear cache
     //await this.cacheManager.del(`voter:${epicNo}`);

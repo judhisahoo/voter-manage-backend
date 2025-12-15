@@ -46,6 +46,12 @@ export class VoterDataController {
     return this.voterDataService.disable(epicNo, req.user.userId);
   }
 
+  @Post('enable/:epicNo')
+  @Roles(UserRole.ADMIN)
+  async enable(@Param('epicNo') epicNo: string, @Request() req) {
+    return this.voterDataService.enable(epicNo, req.user.userId);
+  }
+
   @Delete(':epicNo')
   @Roles(UserRole.ADMIN)
   async delete(@Param('epicNo') epicNo: string) {
