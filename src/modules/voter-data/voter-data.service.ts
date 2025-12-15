@@ -54,7 +54,7 @@ export class VoterDataService {
     // Step 2: Check database
     let voterData = await this.voterDataModel.findOne({
       epic_no: epicNo,
-      isDisabled: false,
+      //isDisabled: false,
     });
 
     if (voterData) {
@@ -182,7 +182,8 @@ export class VoterDataService {
 
     const skip = (page - 1) * limit;
 
-    const searchQuery: any = { isDisabled: false, ...filter };
+    //const searchQuery: any = { isDisabled: false, ...filter };
+    const searchQuery: any = { ...filter };
 
     if (search) {
       searchQuery.$or = [
