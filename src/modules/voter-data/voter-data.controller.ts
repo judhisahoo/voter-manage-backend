@@ -11,6 +11,8 @@ import {
   Request,
   UseInterceptors,
   UploadedFile,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiBearerAuth, ApiTags, ApiConsumes, ApiBody,ApiOperation,ApiParam,ApiResponse } from '@nestjs/swagger';
@@ -30,17 +32,20 @@ import { StatusVoterDto } from './dto/status-voter.dto';
 export class VoterDataController {
   constructor(private voterDataService: VoterDataService) {}
 
+  @HttpCode(HttpStatus.OK)
   @Post('search')
   async search(@Body() searchDto: SearchVoterDto) {
     const epicNumbers = searchDto.epicNumbers.split(',').map((e) => e.trim());
     return this.voterDataService.searchMultiple(epicNumbers);
   }
 
+  @HttpCode(HttpStatus.OK)
   @Get()
   async findAll(@Query() query: any) {
     return this.voterDataService.findAll({}, query);
   }
 
+  @HttpCode(HttpStatus.OK)
   @Post('disable/:epicNo')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Disable voter data by EPIC number (admin only)' })
@@ -49,6 +54,7 @@ export class VoterDataController {
     return this.voterDataService.disable(statusVoterDto, req.user.userId);
   }
 
+  @HttpCode(HttpStatus.OK)
   @Post('enable/:epicNo')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Enable voter data by EPIC number (admin only)' })
