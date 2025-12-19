@@ -4,7 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserStatus } from './schemas/user.schema';
 import { EmailService } from '../email/email.service';
-import * as bcrypt from 'bcryptjs';
+import bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
@@ -14,7 +14,15 @@ export class UsersService {
   ) {}
 
   async create(userData: any) {
-    const user = await this.userModel.create(userData);
+    const existingUser = await this.findByEmail(userData.email);
+
+    if (existingUser) {
+      throw new BadRequestException('Email already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(userData.password, 12);
+
+    const user = await this.userModel.create({ ...userData, password: hashedPassword });
     
     // Send welcome email
     await this.emailService.sendWelcomeEmail(user.email, user.name, userData.password);
