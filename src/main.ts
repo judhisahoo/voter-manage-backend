@@ -9,7 +9,13 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Security
-  app.use(helmet());
+  // Disable contentSecurityPolicy so Swagger UI assets can load on platforms
+  // that enforce stricter CSP (e.g. serverless platforms / Vercel)
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+    }),
+  );
   app.use(compression());
 
   // CORS
@@ -52,6 +58,7 @@ async function bootstrap() {
   SwaggerModule.setup(swaggerPath, app, document, {
     swaggerOptions: {
       persistAuthorization: true,
+      url: `/${swaggerPath}-json`,
     },
   });
 
