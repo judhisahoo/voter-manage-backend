@@ -54,12 +54,54 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  const swaggerPath = `${globalPrefix}/docs`;
-  SwaggerModule.setup(swaggerPath, app, document, {
-    swaggerOptions: {
-      persistAuthorization: true,
-      url: `/${swaggerPath}-json`,
-    },
+  const swaggerPath = `/${globalPrefix}/docs`;
+  const swaggerJsonPath = `/${globalPrefix}/docs-json`;
+
+  // Serve a small custom HTML that loads Swagger UI from CDN. This avoids
+  // Vercel treating `*.js`/`*.css` under the docs path as static files and
+  // returning 404. The HTML will request the OpenAPI JSON from `swaggerJsonPath`.
+  const swaggerHtml = `<!doctype html>
+  <html>
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>API Docs</title>
+      <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+    </head>
+    <body>
+      <div id="swagger-ui"></div>
+      <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+      <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>
+      <script>
+        window.onload = function() {
+          const ui = SwaggerUIBundle({
+            url: '${swaggerJsonPath}',
+            dom_id: '#swagger-ui',
+            presets: [
+              SwaggerUIBundle.presets.apis,
+              SwaggerUIStandalonePreset
+            ],
+            layout: 'StandaloneLayout',
+            persistAuthorization: true,
+          });
+          window.ui = ui;
+        };
+      </script>
+    </body>
+  </html>`;
+
+  const httpAdapter = app.getHttpAdapter();
+
+  // OpenAPI JSON endpoint
+  httpAdapter.get(swaggerJsonPath, (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(document);
+  });
+
+  // Docs UI served as HTML that pulls assets from CDN
+  httpAdapter.get(swaggerPath, (req, res) => {
+    res.setHeader('Content-Type', 'text/html');
+    res.send(swaggerHtml);
   });
 
   await app.listen(process.env.PORT || 4000);
