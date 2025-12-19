@@ -28,7 +28,8 @@ async function bootstrap() {
   );
 
   // API prefix
-  app.setGlobalPrefix('api/v1');
+  const globalPrefix = 'api/v1';
+  app.setGlobalPrefix(globalPrefix);
 
   // Swagger documentation
   const config = new DocumentBuilder()
@@ -47,7 +48,8 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document, {
+  const swaggerPath = `${globalPrefix}/docs`;
+  SwaggerModule.setup(swaggerPath, app, document, {
     swaggerOptions: {
       persistAuthorization: true,
     },
