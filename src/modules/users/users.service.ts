@@ -5,6 +5,7 @@ import { Model } from 'mongoose';
 import { User, UserStatus } from './schemas/user.schema';
 import { EmailService } from '../email/email.service';
 import bcrypt from 'bcryptjs';
+import { console } from 'inspector';
 
 @Injectable()
 export class UsersService {
@@ -72,6 +73,7 @@ export class UsersService {
   }
 
   async updateStatus(id: string, status: UserStatus) {
+    console.log('updateStatus in userService ::', id, status);
     return this.userModel
       .findByIdAndUpdate(id, { status }, { new: true })
       .select('-password')

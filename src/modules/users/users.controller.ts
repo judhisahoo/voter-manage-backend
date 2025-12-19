@@ -17,6 +17,7 @@ import {
   ApiParam,
   ApiResponse,
   ApiTags,
+  ApiBody,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -27,6 +28,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UserDto } from './dto/user.dto';
+import { UpdateStatusDto } from './dto/update-status.dto';
 
 @ApiTags('users')
 @ApiBearerAuth('access-token')
@@ -105,10 +107,12 @@ export class UsersController {
   @Patch(':id/status')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Update user status (admin only)' })
+  @ApiBody({ type: UpdateStatusDto })
   async updateStatus(
     @Param('id') id: string,
-    @Body() body: { status: string },
+    @Body() body: UpdateStatusDto,
   ) {
+    console.log('updateStatus in userController ::', id, body.status);
     return this.usersService.updateStatus(id, body.status as any);
   }
 
